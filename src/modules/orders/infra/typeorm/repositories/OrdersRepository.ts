@@ -3,20 +3,42 @@ import { getRepository, Repository } from 'typeorm';
 import IOrdersRepository from '@modules/orders/repositories/IOrdersRepository';
 import ICreateOrderDTO from '@modules/orders/dtos/ICreateOrderDTO';
 import Order from '../entities/Order';
+import OrdersProducts from '../entities/OrdersProducts';
 
 class OrdersRepository implements IOrdersRepository {
   private ormRepository: Repository<Order>;
+
+  private orderProductRepository: Repository<OrdersProducts>;
 
   constructor() {
     this.ormRepository = getRepository(Order);
   }
 
   public async create({ customer, products }: ICreateOrderDTO): Promise<Order> {
-    // TODO
+    const order = this.ormRepository.create({
+      customer,
+      order_products: products.map(({ product_id, price, quantity }) => {
+        const orderProduct = new OrdersProducts();
+        orderProduct.product_id = product_id;
+        orderProduct.price = price;
+        orderProduct.quantity = quantity;
+        return orderProduct;
+      }),
+    });
+
+    await this.ormRepository.save(order);
+
+    return order;
   }
 
   public async findById(id: string): Promise<Order | undefined> {
-    // TODO
+    const order = await this.ormRepository.findOne({
+      where: {
+        id,
+      },
+    });
+
+    return order;
   }
 }
 
